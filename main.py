@@ -3,7 +3,7 @@ import logging
 import time
 import threading
 import requests
-import json
+
 logging.basicConfig(level=logging.DEBUG)
 
 callsign = "UR5RFF-15"
@@ -38,10 +38,10 @@ def callback(packet):
     try:
         obj = aprslib.parse(packet)
         print(obj)
-        if obj['format'] == 'message':
+        if obj['format'] == 'message' and obj['addresse'] == callsign:
             spec = obj['message_text'].split('{')
             if len(spec) == 2:
-                line = callsign+'>APRS,TCPIP*::'+antitrim(obj['from'], ' ', 9)+':ack'+spec[-1]
+                line = callsign + '>APRS,TCPIP*::' + antitrim(obj['from'], ' ', 9) + ':ack' + spec[-1]
                 AIS.sendall(line)
             obj['message_text'] = spec[0]
             respond(obj)
@@ -50,9 +50,11 @@ def callback(packet):
 
 
 AIS = aprslib.IS(callsign, passwd=password, port=14580)
-AIS.connect()
-# AIS.sendall(callsign + '>APRS,TCPIP*:=5131.45NA03045.83EWweather bot')
-t = threading.Thread(target=beacon)
-t.start()
-AIS.consumer(callback, raw=True, blocking=True)
-AIS.close()
+AIS.set_filter('g/'+callsign)
+try:
+    AIS.connect()
+    t = threading.Thread(target=beacon)
+    t.start()
+    AIS.consumer(callback, raw=True, blocking=True)
+finally:
+    AIS.close()
