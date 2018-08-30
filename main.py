@@ -47,7 +47,8 @@ def callback(packet):
         if obj['format'] == 'message' and obj['addresse'] == callsign:
             spec = obj['message_text'].split('{')
             if len(spec) == 2:
-                line = callsign + '>' + dst + ',TCPIP*::' + antitrim(obj['from'], ' ', 9) + ':ack' + spec[-1]
+                line = callsign + '>' + dst + ',TCPIP*::' + antitrim(obj['from'], ' ', 9) + ':ack'\
+                       + spec[-1].replace('}', '')
                 AIS.sendall(line)
             obj['message_text'] = spec[0]
             respond(obj)
