@@ -8,6 +8,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 callsign = "UR5RFF-15"
 password = '21924'
+dst = 'APRS'
+lat = '5131.45N'
+lng = '03045.83E'
+symbol = 'AW'
+comment = 'Weather bot'
+# TODO Specify longitude and latitude in decimal format and convert into APRS format
 
 
 def antitrim(line, char, reqlength):
@@ -20,7 +26,7 @@ def antitrim(line, char, reqlength):
 def beacon():
     global AIS
     while True:
-        AIS.sendall(callsign + '>APRS,TCPIP*:=5131.45NA03045.83EWweather bot')
+        AIS.sendall(callsign + '>' + dst + ',TCPIP*:=' + lat + symbol[0] + lng + symbol[1] + comment)
         time.sleep(600)
 
 
@@ -41,7 +47,7 @@ def callback(packet):
         if obj['format'] == 'message' and obj['addresse'] == callsign:
             spec = obj['message_text'].split('{')
             if len(spec) == 2:
-                line = callsign + '>APRS,TCPIP*::' + antitrim(obj['from'], ' ', 9) + ':ack' + spec[-1]
+                line = callsign + '>' + dst + ',TCPIP*::' + antitrim(obj['from'], ' ', 9) + ':ack' + spec[-1]
                 AIS.sendall(line)
             obj['message_text'] = spec[0]
             respond(obj)
