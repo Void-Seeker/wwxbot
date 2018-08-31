@@ -6,14 +6,47 @@ import requests
 
 logging.basicConfig(level=logging.DEBUG)
 
+# APRS callsign
 callsign = "UR5RFF-15"
-password = '21924'
+# Passcode for APRS-IS
+passcode = '21924'
+# AX.25 destination callsign is used to identify client software in APRS
 dst = 'APRS'
-lat = '5131.45N'
-lng = '03045.83E'
+# Coordinates of the beacon, negative for south and west
+dec_lat = 51.524074
+dec_lng = 30.765151
+# lat = '5131.45N'
+# lng = '03045.83E'
+# Icon for APRS beacon (see http://www.aprs.org/symbols.html for info)
 symbol = 'AW'
+# APRS beacon comment
 comment = 'Weather bot'
-# TODO Specify longitude and latitude in decimal format and convert into APRS format
+# API key for aprs.fi for retrieving station information (see https://aprs.fi/page/api)
+aprsapikey = '108829.nt375IMvw8nlF'
+# API key for OpenWeatherMap (see https://openweathermap.org/api)
+weatherapikey = '867c8256a6b0b30f57dc04350ee394a6'
+
+
+def decimaltoaprs(decimal, lng=False):
+    if not lng:
+        if decimal >= 0:
+            s = 'N'
+        else:
+            s = 'S'
+    else:
+        if decimal >= 0:
+            s = 'E'
+        else:
+            s = 'W'
+    dec = abs(decimal)
+    degrees = int(dec)
+    minutes = 60*(dec-degrees)
+    result = "{:02}".format(int(minutes)) + '.' + "{:02}".format(int(100 * (minutes - int(minutes)))) + s
+    if not lng:
+        result = "{:02}".format(degrees) + result
+    else:
+        result = "{:03}".format(degrees) + result
+    return result
 
 
 def antitrim(line, char, reqlength):
@@ -33,7 +66,7 @@ def beacon():
 def respond(msg):
     print(msg)
     r = requests.get('https://api.aprs.fi/api/get?name=' + msg['from']
-                     + '&what=loc&apikey=108829.nt375IMvw8nlF&format=json').json()
+                     + '&what=loc&apikey=' + aprsapikey + '&format=json').json()
     if r['found'] != 1:
         print('Warning: Found ' + r['found'] + ' entries')
     sender = r['entries'][0]
@@ -56,7 +89,9 @@ def callback(packet):
         print(packet)
 
 
-AIS = aprslib.IS(callsign, passwd=password, port=14580)
+lat = decimaltoaprs(dec_lat)
+lng = decimaltoaprs(dec_lng, True)
+AIS = aprslib.IS(callsign, passwd=passcode, port=14580)
 AIS.set_filter('g/'+callsign)
 try:
     AIS.connect()
